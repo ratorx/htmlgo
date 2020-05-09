@@ -1,3 +1,4 @@
+//go:generate go run github.com/ratorx/htmlgo/htmlgogen
 package htmlgo
 
 import (
