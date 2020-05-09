@@ -1,9 +1,12 @@
 package attributes
 
-[[ range .AttributeFuncs ]]
+import (
+	"github.com/ratorx/htmlgo"
+)
+[[- range .AttributeFuncs ]]
 
 // [[.FuncName]] represents the HTML attribute '[[.AttrName]]'.
-func [[.FuncName]](values ...string) Attribute {
-	return Attribute{Name: "[[.AttrName]]", Values: values}
+func [[.FuncName]](values ...string) htmlgo.Attribute {
+	return htmlgo.Attribute{Name: "[[.AttrName]]", Values: values}
 }
-[[ end ]]
+[[- end ]]
