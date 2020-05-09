@@ -9,6 +9,10 @@ type HTMLString = htmlgo.String
 type HTMLUnescaped = htmlgo.Unescaped
 type HTMLFunc = htmlgo.Func
 
+func Attrs(attrs ...htmlgo.Attribute) []htmlgo.Attribute {
+	return attrs
+}
+
 // Html initialises a new HTML document with the doctype set.
 func Html(attrs []htmlgo.Attribute, children ...HTML) HTML {
 	return HTMLFunc(func(indentLevel int, renderer *htmlgo.Renderer) {
