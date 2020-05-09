@@ -1,107 +1,15 @@
-# htmlgo
-A library for writing type-safe HTML in Go
+# ratorx/htmlgo
 
-[This blog post](https://julianvossen.de/posts/2019-03-17-htmlgo) provides a short introduction.
+A library for writing type-safe HTML in Go. Forked from [github.com/julvo/htmlgo](https://github.com/julvo/htmlgo).
 
-## Why?
-As much as I like the simplicity and the contextual escaping of `html/template`, it doesn't provide much type safety.
-Pipelines (e.g. `{{.DoesNotExist.Value}}`) can produce errors at runtime, which should be caught during compilation.
-Using nested templates with `html/template` can become hard to maintain, as a template user has to inspect the pipelines within a templates to infer the data format to be passed into the template.
-As a bonus, using Go functions to produce HTML elements prevents malformed HTML.
+Differences:
 
-This library is inspired by [Haskell's blaze-html](http://hackage.haskell.org/package/blaze-html).
+* The threat model is different. All text sanitisation is explicitly user-specified using `HTMLUString`.
+* `HTML` is now an interface. This allows easier creation of stateful components (rather than building closures).
+* The actual HTML is generated lazily.
 
-## Status
-* Support for all HTML5 tags and attributes
-* Secure, contextual escaping (based on `html/template`)
-* Not optimised for performance, expect it to be significantly slower than `html/template`
-
-## API
-### Tags
-Functions for all HTML tags are part of the top-level package `htmlgo`. The
-function signatures are `Tagname(attrs []attributes.Attribute, children ...HTML) HTML`
-To omit the first argument, i.e. to create an element without attributes, there
-are functions with an underscore suffix `Tagname_(children ...HTML) HTML` to
-reduce verbosity.
-
-### Attributes
-Functions to create attributes are located in the package `htmlgo/attributes`.
-Use `Attr(attrs ...attributes.Attribute)` from `htmlgo` as a less verbose way to
-create a slice of attributes. The function signatures are `Attributename(data
-interface{}, templates ...string) Attribute`. The `data` will be placed into the
-given `templates` using `html/template` and, therefore, follows the same syntax.
-Note, as `templates` is a variadic argument, it can be omitted entirely, in
-which case a `{{.}}` template is used. Data provided as `data` will be escaped,
-whereas the `templates` itself can be used to provide values which shall not be
-escaped. Again, there are convenience functions with an underscore suffix to omit the first argument,
-which is `data` in this case `Attributename_(templates ...string) Attribute`.
-Use the underscore-suffixed attribute functions wisely, as they will not escape
-their arguments. A good rule of thumb is that you should never pass a variable
-into the suffixed functions, only string literals.
-
-The dataset attributes `data-*` can be added using `Dataset(key, value string)`.
-
-## Example
-
-```golang
-package main
-
-import (
-    "fmt"
-
-    . "github.com/julvo/htmlgo"
-    a "github.com/julvo/htmlgo/attributes"
-)
-
-func main() {
-    var numberDivs HTML
-    for i := 0; i < 3; i++ {
-        numberDivs += Div(Attr(a.Style_("font-family:monospace;")),
-                          Text(i))
-    }
-
-    page :=
-        Html5_(
-            Head_(),
-            Body_(
-                H1_(Text("Welcome <script>")),
-                numberDivs,
-                Div(Attr(a.Dataset("hello", "htmlgo"))),
-                Script_(JavaScript("alert('This is escaped');")),
-                Script_(JavaScript("This is escaped", "alert({{.}});"))))
-
-    fmt.Println(page)
-}
-
-```
-will output:
-
-```html
-<!DOCTYPE HTML>
-<html>
-  <head>
-  </head>
-  <body>
-    <h1>
-      Welcome &lt;script&gt;
-    </h1>
-    <div style="font-family:monospace;">
-      0
-    </div>
-    <div style="font-family:monospace;">
-      1
-    </div>
-    <div style="font-family:monospace;">
-      2
-    </div>
-    <div data-hello="htmlgo">
-    </div>
-    <script>
-      "alert('This is escaped');"
-    </script>
-    <script>
-      alert("This is escaped");
-    </script>
-  </body>
-</html>
-```
+Potential future directions:
+* Prevent invalid direct parent-child element combinations. This should be relatively easy to do. A dummy interface can be generated for each parent class and the HTML elements that implement the interface can be restricted. The tedious bit is populating the list of constraints.
+* Prevent invalid attribute-element combinations.
+* Investigate transitively invalid trees (e.g. when a certain parent cannot contain have a child node of specific types anywhere below it).
+* Investigate rejecting input at compile time when the above points combine.
